@@ -1,4 +1,4 @@
-name: Test basic usage
+name: Test basic usage - valid workflow files
 on:
   workflow_dispatch:
 jobs:
@@ -7,61 +7,60 @@ jobs:
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
-      - name: Create a valid workflow file to lint
+      - name: Resolve fixture path
+        id: paths
         run: |
-          mkdir -p /tmp/test-workflows/.github/workflows
-          cat > /tmp/test-workflows/.github/workflows/valid.yml << 'EOF'
-          name: Valid Workflow
-          on:
-            push:
-              branches:
-                - main
-          jobs:
-            build:
-              runs-on: ubuntu-latest
-              steps:
-                - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-                - name: Say hello
-                  run: echo "Hello, World!"
-          EOF
+          echo "valid_file=$GITHUB_WORKSPACE/tests/fixtures/valid-workflows/.github/workflows/valid.yml" >> "$GITHUB_OUTPUT"
 
       - id: action
         uses: .
         with:
-          files: /tmp/test-workflows/.github/workflows/valid.yml
+          files: "${{ steps.paths.outputs.valid_file }}"
           shellcheck: "false"
           pyflakes: "false"
+          fail-on-error: "true"
           cache: "false"
 
-      - name: Assert exit-code is 0
+      - name: Assert exit code is 0
         env:
-          ACTUAL: ${{ steps.action.outputs.exit-code }}
+          EXIT_CODE: ${{ steps.action.outputs.exit-code }}
         run: |
-          echo "actual exit-code: $ACTUAL"
-          if [ "$ACTUAL" != "0" ]; then
-            echo "FAIL: expected exit-code '0', got '$ACTUAL'"
+          echo "exit-code: $EXIT_CODE"
+          if [ "$EXIT_CODE" != "0" ]; then
+            echo "FAIL: expected exit code 0 but got $EXIT_CODE"
             exit 1
           fi
           echo "PASS"
 
       - name: Assert version-semver is set
         env:
-          ACTUAL: ${{ steps.action.outputs.version-semver }}
+          VERSION_SEMVER: ${{ steps.action.outputs.version-semver }}
         run: |
-          echo "actual version-semver: $ACTUAL"
-          if [ -z "$ACTUAL" ]; then
-            echo "FAIL: expected version-semver to be non-empty"
+          echo "version-semver: $VERSION_SEMVER"
+          if [ -z "$VERSION_SEMVER" ]; then
+            echo "FAIL: version-semver output is empty"
             exit 1
           fi
-          echo "PASS"
+          echo "PASS: version-semver=$VERSION_SEMVER"
 
       - name: Assert version-tag is set
         env:
-          ACTUAL: ${{ steps.action.outputs.version-tag }}
+          VERSION_TAG: ${{ steps.action.outputs.version-tag }}
         run: |
-          echo "actual version-tag: $ACTUAL"
-          if [ -z "$ACTUAL" ]; then
-            echo "FAIL: expected version-tag to be non-empty"
+          echo "version-tag: $VERSION_TAG"
+          if [ -z "$VERSION_TAG" ]; then
+            echo "FAIL: version-tag output is empty"
+            exit 1
+          fi
+          echo "PASS: version-tag=$VERSION_TAG"
+
+      - name: Assert total-errors is 0
+        env:
+          TOTAL_ERRORS: ${{ steps.action.outputs.total-errors }}
+        run: |
+          echo "total-errors: $TOTAL_ERRORS"
+          if [ "$TOTAL_ERRORS" != "0" ]; then
+            echo "FAIL: expected 0 errors but got $TOTAL_ERRORS"
             exit 1
           fi
           echo "PASS"

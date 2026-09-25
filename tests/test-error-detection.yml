@@ -1,0 +1,44 @@
+name: Test error detection - invalid workflow files
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Resolve fixture path
+        id: paths
+        run: |
+          echo "invalid_file=$GITHUB_WORKSPACE/tests/fixtures/invalid-workflows/.github/workflows/invalid.yml" >> "$GITHUB_OUTPUT"
+
+      - id: action
+        uses: .
+        with:
+          files: "${{ steps.paths.outputs.invalid_file }}"
+          shellcheck: "false"
+          pyflakes: "false"
+          fail-on-error: "false"
+          cache: "false"
+
+      - name: Assert exit code is non-zero (errors found)
+        env:
+          EXIT_CODE: ${{ steps.action.outputs.exit-code }}
+        run: |
+          echo "exit-code: $EXIT_CODE"
+          if [ "$EXIT_CODE" = "0" ]; then
+            echo "FAIL: expected non-zero exit code (errors should be found) but got 0"
+            exit 1
+          fi
+          echo "PASS: got non-zero exit code $EXIT_CODE as expected"
+
+      - name: Assert exit-message is set
+        env:
+          EXIT_MESSAGE: ${{ steps.action.outputs.exit-message }}
+        run: |
+          echo "exit-message: $EXIT_MESSAGE"
+          if [ -z "$EXIT_MESSAGE" ]; then
+            echo "FAIL: exit-message output is empty"
+            exit 1
+          fi
+          echo "PASS: exit-message=$EXIT_MESSAGE"

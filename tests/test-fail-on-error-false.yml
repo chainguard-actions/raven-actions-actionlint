@@ -1,4 +1,4 @@
-name: Test fail-on-error disabled
+name: Test fail-on-error false - errors found but step succeeds
 on:
   workflow_dispatch:
 jobs:
@@ -7,48 +7,38 @@ jobs:
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
-      - name: Create an invalid workflow file to lint
+      - name: Resolve fixture path
+        id: paths
         run: |
-          mkdir -p /tmp/test-invalid/.github/workflows
-          cat > /tmp/test-invalid/.github/workflows/invalid.yml << 'EOF'
-          name: Invalid Workflow
-          on: push
-          jobs:
-            build:
-              runs-on: ubuntu-latest
-              steps:
-                - name: Bad step
-                  run: echo "hello"
-                  uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
-          EOF
+          echo "invalid_file=$GITHUB_WORKSPACE/tests/fixtures/invalid-workflows/.github/workflows/invalid.yml" >> "$GITHUB_OUTPUT"
 
       - id: action
         uses: .
         with:
-          files: /tmp/test-invalid/.github/workflows/invalid.yml
-          fail-on-error: "false"
+          files: "${{ steps.paths.outputs.invalid_file }}"
           shellcheck: "false"
           pyflakes: "false"
+          fail-on-error: "false"
           cache: "false"
 
-      - name: Assert exit-code is non-zero (errors found)
+      - name: Assert step outcome is success (fail-on-error=false)
         env:
-          ACTUAL: ${{ steps.action.outputs.exit-code }}
+          OUTCOME: ${{ steps.action.outcome }}
         run: |
-          echo "actual exit-code: $ACTUAL"
-          if [ "$ACTUAL" = "0" ]; then
-            echo "FAIL: expected non-zero exit-code since workflow has errors"
+          echo "outcome: $OUTCOME"
+          if [ "$OUTCOME" != "success" ]; then
+            echo "FAIL: expected step outcome 'success' but got '$OUTCOME'"
             exit 1
           fi
-          echo "PASS: exit-code is $ACTUAL (non-zero as expected)"
+          echo "PASS: step succeeded despite linting errors"
 
-      - name: Assert exit-message is set
+      - name: Assert exit code is non-zero (errors were found)
         env:
-          ACTUAL: ${{ steps.action.outputs.exit-message }}
+          EXIT_CODE: ${{ steps.action.outputs.exit-code }}
         run: |
-          echo "actual exit-message: $ACTUAL"
-          if [ -z "$ACTUAL" ]; then
-            echo "FAIL: expected exit-message to be non-empty"
+          echo "exit-code: $EXIT_CODE"
+          if [ "$EXIT_CODE" = "0" ]; then
+            echo "FAIL: expected non-zero exit code but got 0"
             exit 1
           fi
-          echo "PASS"
+          echo "PASS: exit code is $EXIT_CODE (non-zero, errors found)"

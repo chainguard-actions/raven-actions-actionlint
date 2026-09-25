@@ -7,62 +7,50 @@ jobs:
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
-      - name: Create a valid workflow file to lint
+      - name: Resolve fixture path
+        id: paths
         run: |
-          mkdir -p /tmp/test-pinned/.github/workflows
-          cat > /tmp/test-pinned/.github/workflows/simple.yml << 'EOF'
-          name: Simple Workflow
-          on:
-            push:
-              branches:
-                - main
-          jobs:
-            build:
-              runs-on: ubuntu-latest
-              steps:
-                - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-                - name: Run something
-                  run: echo "done"
-          EOF
+          echo "simple_file=$GITHUB_WORKSPACE/tests/fixtures/pinned-version-workflows/.github/workflows/simple.yml" >> "$GITHUB_OUTPUT"
 
       - id: action
         uses: .
         with:
-          version: "1.7.7"
-          files: /tmp/test-pinned/.github/workflows/simple.yml
+          version: "1.7.4"
+          files: "${{ steps.paths.outputs.simple_file }}"
           shellcheck: "false"
           pyflakes: "false"
+          fail-on-error: "true"
           cache: "false"
 
       - name: Assert version-semver matches pinned version
         env:
-          ACTUAL: ${{ steps.action.outputs.version-semver }}
+          VERSION_SEMVER: ${{ steps.action.outputs.version-semver }}
         run: |
-          echo "actual version-semver: $ACTUAL"
-          if [ "$ACTUAL" != "1.7.7" ]; then
-            echo "FAIL: expected version-semver '1.7.7', got '$ACTUAL'"
+          echo "version-semver: $VERSION_SEMVER"
+          if [ "$VERSION_SEMVER" != "1.7.4" ]; then
+            echo "FAIL: expected version-semver '1.7.4' but got '$VERSION_SEMVER'"
             exit 1
           fi
-          echo "PASS"
+          echo "PASS: version-semver=$VERSION_SEMVER"
 
       - name: Assert version-tag matches pinned version
         env:
-          ACTUAL: ${{ steps.action.outputs.version-tag }}
+          VERSION_TAG: ${{ steps.action.outputs.version-tag }}
         run: |
-          echo "actual version-tag: $ACTUAL"
-          if [ "$ACTUAL" != "v1.7.7" ]; then
-            echo "FAIL: expected version-tag 'v1.7.7', got '$ACTUAL'"
+          echo "version-tag: $VERSION_TAG"
+          if [ "$VERSION_TAG" != "v1.7.4" ]; then
+            echo "FAIL: expected version-tag 'v1.7.4' but got '$VERSION_TAG'"
             exit 1
           fi
-          echo "PASS"
+          echo "PASS: version-tag=$VERSION_TAG"
 
-      - name: Assert exit-code is 0
+      - name: Assert exit code is 0
         env:
-          ACTUAL: ${{ steps.action.outputs.exit-code }}
+          EXIT_CODE: ${{ steps.action.outputs.exit-code }}
         run: |
-          echo "actual exit-code: $ACTUAL"
-          if [ "$ACTUAL" != "0" ]; then
-            echo "FAIL: expected exit-code '0', got '$ACTUAL'"
+          echo "exit-code: $EXIT_CODE"
+          if [ "$EXIT_CODE" != "0" ]; then
+            echo "FAIL: expected exit code 0 but got $EXIT_CODE"
             exit 1
           fi
           echo "PASS"
