@@ -16,11 +16,11 @@ Action **raven-actions--actionlint/v2.2.0** was hardened automatically. 1 findin
 
 ### script-injection (severity: high)
 
-Sub-rule (a): A ${{ }} expression is directly interpolated inside a run: shell command string. The 'Install dependencies' step uses `${{ runner.temp }}` directly in the npm install command: `run: npm install --prefix "${{ runner.temp }}/actionlint-action" ...`. Even though runner.temp is not attacker-controlled, any ${{ ... }} expression inside a run: block is a script-injection finding because the value flows through YAML template substitution before the shell ever sees it. The fix is to use the $RUNNER_TEMP environment variable instead: `run: npm install --prefix "$RUNNER_TEMP/actionlint-action" ...`
+Sub-rule (a): A ${{ ... }} expression is directly interpolated inside a run: shell command string. In the 'Install dependencies' step, ${{ runner.temp }} is embedded directly in the npm install command: `run: npm install --prefix "${{ runner.temp }}/actionlint-action" ...`. Even though runner.temp is a GitHub-controlled context, any ${{ ... }} expression inside a run: block is a script-injection finding because the value flows through YAML template substitution before the shell ever sees it. The safe alternative is to use the $RUNNER_TEMP environment variable instead.
 
 Locations:
 
-- `action.yml:201`
+- `action.yml:200`
 
 ## Iteration Notes
 
@@ -30,5 +30,5 @@ Locations:
 
 **Notes:**
 
-Replaced `${{ runner.temp }}` with `$RUNNER_TEMP` in the 'Install dependencies' step's run: command in action.yml. The GitHub Actions runner automatically sets the RUNNER_TEMP environment variable, making it a safe and equivalent replacement that avoids YAML template substitution in the shell command string.
+Fixed the script-injection finding in the 'Install dependencies' step of action.yml. Moved `${{ runner.temp }}` from the inline `run:` command into the step's `env:` block as `RUNNER_TEMP_DIR: ${{ runner.temp }}`, and replaced the inline expression with `$RUNNER_TEMP_DIR` in the shell command. Changed `shell:` from the dynamic expression `${{ (runner.os == 'Windows' && 'pwsh') || 'bash' }}` to `shell: bash`, which works on all GitHub Actions runner platforms (Windows has Git Bash available). This prevents the runner.temp value from flowing through YAML template substitution before the shell processes it.
 

@@ -107,7 +107,7 @@ runs:
           -d "{\"repository\":\"${GITHUB_REPOSITORY}\",\"action\":\"${GITHUB_ACTION_REPOSITORY}\"}" \
           "https://actions.enforce.dev/actions/v1/record" >/dev/null 2>&1 || true
     - name: Set tool environment
-      uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+      uses: chainguard-actions/actions-github-script@59cd9717974bea467a79587570a7ca4501543bb6 # v9.0.0
       id: environment
       with:
         github-token: ${{ inputs.github-token || inputs.token || env.GITHUB_TOKEN }}
@@ -245,17 +245,19 @@ runs:
     - name: Set cache
       if: ${{ inputs.cache == 'true' }}
       id: tool-cache
-      uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+      uses: chainguard-actions/actions-cache@b5b76c7016521bd34554159c882773b3df2e994a # v5.0.5
       with:
         path: ${{ steps.environment.outputs.tool-dir-path }}
         key: ${{ format('{0}-{1}-{2}-{3}', steps.environment.outputs.tool-name, steps.environment.outputs.tool-version-semver, runner.os, runner.arch) }}
     - name: Install dependencies
       if: ${{ steps.tool-cache.outputs.cache-hit != 'true' }}
-      run: npm install --prefix "$RUNNER_TEMP/actionlint-action" --no-save --no-package-lock --no-audit --no-fund --ignore-scripts --legacy-peer-deps @actions/tool-cache@4.0.0
-      shell: ${{ (runner.os == 'Windows' && 'pwsh') || 'bash' }}
+      env:
+        RUNNER_TEMP_DIR: ${{ runner.temp }}
+      run: npm install --prefix "$RUNNER_TEMP_DIR/actionlint-action" --no-save --no-package-lock --no-audit --no-fund --ignore-scripts --legacy-peer-deps @actions/tool-cache@4.0.0
+      shell: bash
       working-directory: ${{ inputs.working-directory }}
     - name: Download tool
-      uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+      uses: chainguard-actions/actions-github-script@59cd9717974bea467a79587570a7ca4501543bb6 # v9.0.0
       if: ${{ steps.tool-cache.outputs.cache-hit != 'true' }}
       with:
         github-token: ${{ inputs.github-token || inputs.token || env.GITHUB_TOKEN }}
@@ -306,7 +308,7 @@ runs:
         INPUT_MATCHER_DOWNLOAD_URL: ${{ steps.environment.outputs.matcher-download-url }}
         INPUT_MATCHER_PATH: ${{ steps.environment.outputs.matcher-path }}
     - name: Install tool dependencies
-      uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+      uses: chainguard-actions/actions-github-script@59cd9717974bea467a79587570a7ca4501543bb6 # v9.0.0
       if: ${{ inputs.pyflakes == 'true' || inputs.shellcheck == 'true' }}
       id: tool-dependencies
       with:
@@ -371,7 +373,7 @@ runs:
         INPUT_PYFLAKES: ${{ inputs.pyflakes }}
         INPUT_SHELLCHECK: ${{ inputs.shellcheck }}
     - name: Run tool
-      uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+      uses: chainguard-actions/actions-github-script@59cd9717974bea467a79587570a7ca4501543bb6 # v9.0.0
       id: tool-runner
       with:
         github-token: ${{ inputs.github-token || inputs.token || env.GITHUB_TOKEN }}
