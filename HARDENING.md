@@ -16,11 +16,11 @@ Action **raven-actions--actionlint/v2.2.0** was hardened automatically. 1 findin
 
 ### script-injection (severity: high)
 
-Sub-rule (a): A ${{ ... }} expression is directly interpolated inside a run: shell command string. In the 'Install dependencies' step, ${{ runner.temp }} is embedded directly in the npm install command: `run: npm install --prefix "${{ runner.temp }}/actionlint-action" ...`. Even though runner.temp is a GitHub-controlled context, any ${{ ... }} expression inside a run: block is a script-injection finding because the value flows through YAML template substitution before the shell ever sees it. The safe alternative is to use the $RUNNER_TEMP environment variable instead.
+Sub-rule (a): The 'Install dependencies' step's run: block directly interpolates the GitHub Actions expression `${{ runner.temp }}` into the shell command string. Any `${{ ... }}` expression inside a run: block is subject to YAML template substitution before the shell processes it, making it a script-injection risk. The offending line is: `run: npm install --prefix "${{ runner.temp }}/actionlint-action" ...`. This should be replaced with the environment variable `$RUNNER_TEMP` (which is already available as a process env var) to avoid direct expression interpolation in the shell command.
 
 Locations:
 
-- `action.yml:200`
+- `action.yml:208`
 
 ## Iteration Notes
 
@@ -30,5 +30,5 @@ Locations:
 
 **Notes:**
 
-Fixed the script-injection finding in the 'Install dependencies' step of action.yml. Moved `${{ runner.temp }}` from the inline `run:` command into the step's `env:` block as `RUNNER_TEMP_DIR: ${{ runner.temp }}`, and replaced the inline expression with `$RUNNER_TEMP_DIR` in the shell command. Changed `shell:` from the dynamic expression `${{ (runner.os == 'Windows' && 'pwsh') || 'bash' }}` to `shell: bash`, which works on all GitHub Actions runner platforms (Windows has Git Bash available). This prevents the runner.temp value from flowing through YAML template substitution before the shell processes it.
+Fixed the script-injection finding in action.yml at the 'Install dependencies' step (line 208). Replaced `${{ runner.temp }}` with `$RUNNER_TEMP` (the pre-existing GitHub Actions environment variable) in the npm install --prefix argument. Also changed `shell: ${{ (runner.os == 'Windows' && 'pwsh') || 'bash' }}` to `shell: bash` to ensure consistent variable syntax across all platforms (bash is available on all GitHub Actions runners including Windows via Git Bash).
 
