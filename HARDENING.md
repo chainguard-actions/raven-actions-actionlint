@@ -16,11 +16,11 @@ Action **raven-actions--actionlint/v2.2.0** was hardened automatically. 1 findin
 
 ### script-injection (severity: high)
 
-Sub-rule (a): The 'Install dependencies' step's run: block directly interpolates the GitHub Actions expression `${{ runner.temp }}` into the shell command string. Any `${{ ... }}` expression inside a run: block is subject to YAML template substitution before the shell processes it, making it a script-injection risk. The offending line is: `run: npm install --prefix "${{ runner.temp }}/actionlint-action" ...`. This should be replaced with the environment variable `$RUNNER_TEMP` (which is already available as a process env var) to avoid direct expression interpolation in the shell command.
+Sub-rule (a): The 'Install dependencies' step's run: block directly interpolates the expression `${{ runner.temp }}` into the shell command string: `run: npm install --prefix "${{ runner.temp }}/actionlint-action" ...`. Any `${{ ... }}` expression interpolated directly inside a run: shell command is a script-injection risk because the value is substituted into the shell command before the shell ever parses it, allowing metacharacters to be interpreted. The value should be passed via an env: variable and referenced as `"$RUNNER_TEMP"` instead.
 
 Locations:
 
-- `action.yml:208`
+- `action.yml:222`
 
 ## Iteration Notes
 
@@ -30,5 +30,5 @@ Locations:
 
 **Notes:**
 
-Fixed the script-injection finding in action.yml at the 'Install dependencies' step (line 208). Replaced `${{ runner.temp }}` with `$RUNNER_TEMP` (the pre-existing GitHub Actions environment variable) in the npm install --prefix argument. Also changed `shell: ${{ (runner.os == 'Windows' && 'pwsh') || 'bash' }}` to `shell: bash` to ensure consistent variable syntax across all platforms (bash is available on all GitHub Actions runners including Windows via Git Bash).
+Fixed script injection in the 'Install dependencies' step of action.yml (line 222). Moved `${{ runner.temp }}` out of the run: shell command and into an env: block as `RUNNER_TEMP: ${{ runner.temp }}`. The shell command now references `$RUNNER_TEMP` instead of the inline expression. Changed shell from the conditional pwsh/bash expression to `bash` (available on all GitHub Actions runners including Windows) to ensure the bash variable syntax works correctly.
 
