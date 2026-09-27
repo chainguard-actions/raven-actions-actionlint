@@ -16,11 +16,11 @@ Action **raven-actions--actionlint/v2.2.0** was hardened automatically. 1 findin
 
 ### script-injection (severity: high)
 
-Sub-rule (a): The 'Install dependencies' step's run: block directly interpolates the expression `${{ runner.temp }}` into the shell command string: `run: npm install --prefix "${{ runner.temp }}/actionlint-action" ...`. Any `${{ ... }}` expression interpolated directly inside a run: shell command is a script-injection risk because the value is substituted into the shell command before the shell ever parses it, allowing metacharacters to be interpreted. The value should be passed via an env: variable and referenced as `"$RUNNER_TEMP"` instead.
+Sub-rule (a): The 'Install dependencies' step's run: block directly interpolates the expression `${{ runner.temp }}` inside the shell command string. Any `${{ ... }}` expression interpolated directly into a run: block is a script-injection risk because the value is substituted by the GitHub Actions template engine before the shell ever sees it, bypassing shell quoting. The offending line is: `run: npm install --prefix "${{ runner.temp }}/actionlint-action" ...`. The fix is to pass the value via an env: variable and reference it as `"$RUNNER_TEMP"` in the shell command instead.
 
 Locations:
 
-- `action.yml:222`
+- `action.yml:200`
 
 ## Iteration Notes
 
@@ -30,5 +30,5 @@ Locations:
 
 **Notes:**
 
-Fixed script injection in the 'Install dependencies' step of action.yml (line 222). Moved `${{ runner.temp }}` out of the run: shell command and into an env: block as `RUNNER_TEMP: ${{ runner.temp }}`. The shell command now references `$RUNNER_TEMP` instead of the inline expression. Changed shell from the conditional pwsh/bash expression to `bash` (available on all GitHub Actions runners including Windows) to ensure the bash variable syntax works correctly.
+Fixed the 'Install dependencies' step in action.yml (line 200): moved `${{ runner.temp }}` out of the run: block into an env: variable `RUNNER_TEMP: ${{ runner.temp }}`, and updated the npm install command to reference `"$RUNNER_TEMP/actionlint-action"` instead of `"${{ runner.temp }}/actionlint-action"`.
 
