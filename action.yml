@@ -251,11 +251,10 @@ runs:
         key: ${{ format('{0}-{1}-{2}-{3}', steps.environment.outputs.tool-name, steps.environment.outputs.tool-version-semver, runner.os, runner.arch) }}
     - name: Install dependencies
       if: ${{ steps.tool-cache.outputs.cache-hit != 'true' }}
-      env:
-        RUNNER_TEMP: ${{ runner.temp }}
       run: npm install --prefix "$RUNNER_TEMP/actionlint-action" --no-save --no-package-lock --no-audit --no-fund --ignore-scripts --legacy-peer-deps @actions/tool-cache@4.0.0
-      shell: ${{ (runner.os == 'Windows' && 'pwsh') || 'bash' }}
-      working-directory: ${{ inputs.working-directory }}
+      shell: bash
+      env:
+        WORKING_DIR: ${{ inputs.working-directory }}
     - name: Download tool
       uses: chainguard-actions/actions-github-script@59cd9717974bea467a79587570a7ca4501543bb6 # v9.0.0
       if: ${{ steps.tool-cache.outputs.cache-hit != 'true' }}
