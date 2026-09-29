@@ -16,14 +16,11 @@ Action **raven-actions--actionlint/v2.2.0** was hardened automatically. 1 findin
 
 ### script-injection (severity: high)
 
-Sub-rule (a): The 'Install dependencies' step's run: block directly interpolates GitHub Actions expressions into the shell command string. Specifically, `${{ runner.temp }}` is embedded in the npm install --prefix path, and `${{ inputs.working-directory }}` (a caller-controlled input) is passed as the working-directory field. Any `${{ ... }}` expression inside a run: block is a script-injection risk because YAML template substitution occurs before the shell ever sees the value. The offending lines are:
-  run: npm install --prefix "${{ runner.temp }}/actionlint-action" ...
-  working-directory: ${{ inputs.working-directory }}
-Fix: use the $RUNNER_TEMP environment variable instead of ${{ runner.temp }}, and pass working-directory via an env: variable (e.g. WORKING_DIR: ${{ inputs.working-directory }}) then reference "$WORKING_DIR" in the script.
+Sub-rule (a): The 'Install dependencies' step's `run:` block directly interpolates `${{ runner.temp }}` inside the shell command string. Any `${{ ... }}` expression interpolated directly in a `run:` script is a script-injection risk because YAML template substitution occurs before the shell ever sees the value. The offending line is: `run: npm install --prefix "${{ runner.temp }}/actionlint-action" ...`. This should be replaced with the equivalent process environment variable `$RUNNER_TEMP` instead.
 
 Locations:
 
-- `action.yml:200`
+- `action.yml:196`
 
 ## Iteration Notes
 
@@ -33,5 +30,5 @@ Locations:
 
 **Notes:**
 
-Fixed the 'Install dependencies' step in action.yml: (1) replaced `${{ runner.temp }}` in the run: block with `$RUNNER_TEMP` (the built-in GitHub Actions env var, already available at shell runtime), eliminating YAML template substitution before the shell executes; (2) removed `working-directory: ${{ inputs.working-directory }}` and moved the caller-controlled input into an `env:` block as `WORKING_DIR: ${{ inputs.working-directory }}` so it is passed as an environment variable rather than being directly interpolated; (3) changed the shell from the dynamic expression `${{ (runner.os == 'Windows' && 'pwsh') || 'bash' }}` to `bash` for consistent behavior with the bash-style `$RUNNER_TEMP` variable reference.
+Fixed the 'Install dependencies' step in action.yml (line 196): moved `${{ runner.temp }}` out of the `run:` block into an `env:` block as `RUNNER_TEMP_PATH: ${{ runner.temp }}`, and replaced the inline expression with `$RUNNER_TEMP_PATH` in the shell command. Also simplified the shell from the dynamic `${{ (runner.os == 'Windows' && 'pwsh') || 'bash' }}` to `bash`, which is available on all GitHub Actions platforms including Windows.
 
