@@ -16,11 +16,15 @@ Action **raven-actions--actionlint/v2.2.0** was hardened automatically. 1 findin
 
 ### script-injection (severity: high)
 
-Sub-rule (a): The 'Install dependencies' step's `run:` block directly interpolates `${{ runner.temp }}` inside the shell command string. Any `${{ ... }}` expression interpolated directly in a `run:` script is a script-injection risk because YAML template substitution occurs before the shell ever sees the value. The offending line is: `run: npm install --prefix "${{ runner.temp }}/actionlint-action" ...`. This should be replaced with the equivalent process environment variable `$RUNNER_TEMP` instead.
+Sub-rule (a) violation: A `${{ ... }}` expression is directly interpolated inside a `run:` shell command string in the 'Install dependencies' step. The offending line is:
+
+  run: npm install --prefix "${{ runner.temp }}/actionlint-action" --no-save ...
+
+Even though `runner.temp` is a GitHub-controlled context (not directly attacker-supplied), any `${{ ... }}` expression inside a `run:` block undergoes YAML template substitution before the shell ever sees it, making it a script-injection risk. The value should be passed via an `env:` variable and referenced as `"$RUNNER_TEMP"` in the shell command instead.
 
 Locations:
 
-- `action.yml:196`
+- `action.yml:215`
 
 ## Iteration Notes
 
@@ -30,5 +34,5 @@ Locations:
 
 **Notes:**
 
-Fixed the 'Install dependencies' step in action.yml (line 196): moved `${{ runner.temp }}` out of the `run:` block into an `env:` block as `RUNNER_TEMP_PATH: ${{ runner.temp }}`, and replaced the inline expression with `$RUNNER_TEMP_PATH` in the shell command. Also simplified the shell from the dynamic `${{ (runner.os == 'Windows' && 'pwsh') || 'bash' }}` to `bash`, which is available on all GitHub Actions platforms including Windows.
+Fixed the script injection in the 'Install dependencies' step of action.yml (line 215). Moved `${{ runner.temp }}` from the `run:` shell command into an `env:` block as `RUNNER_TEMP_PATH`, and updated the shell command to reference it as `"$RUNNER_TEMP_PATH"`. Changed the shell from the dynamic `${{ (runner.os == 'Windows' && 'pwsh') || 'bash' }}` expression to explicit `bash` (bash is available on all GitHub Actions runners including Windows via Git Bash) to ensure the bash variable syntax works correctly.
 
