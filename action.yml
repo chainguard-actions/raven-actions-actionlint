@@ -107,7 +107,7 @@ runs:
           -d "{\"repository\":\"${GITHUB_REPOSITORY}\",\"action\":\"${GITHUB_ACTION_REPOSITORY}\"}" \
           "https://actions.enforce.dev/actions/v1/record" >/dev/null 2>&1 || true
     - name: Set tool environment
-      uses: chainguard-actions/actions-github-script@59cd9717974bea467a79587570a7ca4501543bb6 # v9.0.0
+      uses: chainguard-actions/actions-github-script@90ea3578c9f973abcd1e50255ba3c1cd19216b51 # v9.0.0
       id: environment
       with:
         github-token: ${{ inputs.github-token || inputs.token || env.GITHUB_TOKEN }}
@@ -257,7 +257,7 @@ runs:
       shell: bash
       working-directory: ${{ inputs.working-directory }}
     - name: Download tool
-      uses: chainguard-actions/actions-github-script@59cd9717974bea467a79587570a7ca4501543bb6 # v9.0.0
+      uses: chainguard-actions/actions-github-script@90ea3578c9f973abcd1e50255ba3c1cd19216b51 # v9.0.0
       if: ${{ steps.tool-cache.outputs.cache-hit != 'true' }}
       with:
         github-token: ${{ inputs.github-token || inputs.token || env.GITHUB_TOKEN }}
@@ -308,7 +308,7 @@ runs:
         INPUT_MATCHER_DOWNLOAD_URL: ${{ steps.environment.outputs.matcher-download-url }}
         INPUT_MATCHER_PATH: ${{ steps.environment.outputs.matcher-path }}
     - name: Install tool dependencies
-      uses: chainguard-actions/actions-github-script@59cd9717974bea467a79587570a7ca4501543bb6 # v9.0.0
+      uses: chainguard-actions/actions-github-script@90ea3578c9f973abcd1e50255ba3c1cd19216b51 # v9.0.0
       if: ${{ inputs.pyflakes == 'true' || inputs.shellcheck == 'true' }}
       id: tool-dependencies
       with:
@@ -373,7 +373,7 @@ runs:
         INPUT_PYFLAKES: ${{ inputs.pyflakes }}
         INPUT_SHELLCHECK: ${{ inputs.shellcheck }}
     - name: Run tool
-      uses: chainguard-actions/actions-github-script@59cd9717974bea467a79587570a7ca4501543bb6 # v9.0.0
+      uses: chainguard-actions/actions-github-script@90ea3578c9f973abcd1e50255ba3c1cd19216b51 # v9.0.0
       id: tool-runner
       with:
         github-token: ${{ inputs.github-token || inputs.token || env.GITHUB_TOKEN }}
